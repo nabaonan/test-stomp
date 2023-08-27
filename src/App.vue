@@ -2,12 +2,12 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:24:17
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-27 15:03:51
+ * @LastEditTime: 2023-08-27 15:07:30
  * @FilePath: /test-stomp/src/App.vue
  * @Description: 
 -->
 <script setup lang="ts">
-import { Space, Button, Input, List, Card, Row, Col, Select, Tag, message, Divider, ConfigProvider } from 'ant-design-vue';
+import { Space, Button, Input, List, Card, Row, Col, Select, Tag, message, ConfigProvider } from 'ant-design-vue';
 import { Client, StompSubscription, } from '@stomp/stompjs';
 import { computed, ref } from 'vue';
 
