@@ -2,12 +2,12 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:24:17
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-27 14:11:30
+ * @LastEditTime: 2023-08-27 15:03:51
  * @FilePath: /test-stomp/src/App.vue
  * @Description: 
 -->
 <script setup lang="ts">
-import { Space, Button, Input, List, Card, Row, Col, Select, Tag, message, Divider } from 'ant-design-vue';
+import { Space, Button, Input, List, Card, Row, Col, Select, Tag, message, Divider, ConfigProvider } from 'ant-design-vue';
 import { Client, StompSubscription, } from '@stomp/stompjs';
 import { computed, ref } from 'vue';
 
@@ -112,6 +112,7 @@ const subscribe = (channelName: string, index: number) => {
       client.msg.push(`接收到的消息: ${message.body}`)
     });
     client.channels.push(channelName)
+    client.channelName = ''
   }
 }
 
@@ -272,142 +273,158 @@ const clearServer = async () => {
 </script>
 
 <template>
-  <Row :gutter="16">
+  <ConfigProvider componentSize="small">
+    <Row :gutter="16">
 
-    <Col span="8">
-    <Card title="服务器设置">
+      <Col span="8">
+      <Card title="服务器设置" hoverable>
 
-      <Space.Compact>
-
-        <Input v-model:value="serverUrl" :placeholder="`${url}`" />
-        <Button @click="startServer" type="primary" v-show="!serverStatus">启动服务</Button>
-        <Button type="primary" v-show="serverStatus">运行中</Button>
-      </Space.Compact>
-      <Divider></Divider>
-
-      <Space.Compact>
-        <Input placeholder="请输入channel名称" v-model:value="serverChannelName" />
-        <Button @click="() => serverSubscriptChannel()" :disabled="!serverStatus"> 订阅频道</Button>
-
-      </Space.Compact>
-
-      <List item-layout="horizontal" :data-source="subscribs">
-        <template #renderItem="{ index, item }">
-          <List.Item :style="{
-            background: item.status ? '#00b96ba0' : ''
-          }">
-            <template #actions>
-              <Button v-show="item.status" danger @click="() => serverUnsubscriptChannel(index)">
-                取消订阅
-              </Button>
-              <template v-if="!item.status">
-                <Button danger @click="() => delServerChannel(index)">
-                  删除
-                </Button>
-                <Button type="primary" @click="() => serverSubscriptChannel(index, item.value)">
-                  订阅
-                </Button>
-              </template>
-            </template>
-            <template #default>
-
-              {{ item.title }}
-            </template>
-          </List.Item>
-        </template>
-      </List>
-
-      <Divider></Divider>
-
-      <Space.Compact>
-
-        <Select style="width: 140px" placeholder="请选择channel" :options="subscribs"
-          v-model:value="serverChooseChannel"></Select>
-
-        <Input placeholder="群发消息" v-model:value="serverSay"></Input>
-        <Button @click="() => serverSend()" :disabled="!canAllSend">发送</Button>
-      </Space.Compact>
-
-
-
-    </Card>
-    </Col>
-
-    <Col span="8">
-    <Card title="服务器接收的消息">
-
-      <Button @click="clearServer" danger>清空消息</Button>
-
-      <List :data-source="serverMsg">
-
-        <template #renderItem="{ item }">
-          <List.Item>
-
-            {{ item }}
-
-          </List.Item>
-        </template>
-      </List>
-
-    </Card>
-    </Col>
-
-    <Col span="8">
-    <Card title="所有客户端">
-
-
-
-      <template v-for="(client, index) in clients">
-        <Card :title="`用户${index}`">
-
-
-          <Space>
-
-            <Button type="primary" v-show="!client.status" @click="() => connect(index)">连接stomp服务器</Button>
-            <Button v-show="client.status" type="primary" @click="() => unconnect(index)">已经连接</Button>
-          </Space>
-          <Space>
-            <Select style="width: 140px;" placeholder="请选择channel" v-model:value="client.channelName"
-              :fieldNames="{ label: 'title', value: 'value', children: 'children' }" :options="subscribs"></Select>
-
-            <Button @click="() => subscribe(client.channelName, index)">订阅</Button>
-          </Space>
-
-          <Divider></Divider>
-
-          <Space>
-            <Tag v-for="item in client.channels" @close="() => unsubscribe(item, index)" closable :key="item"
-              color="blue">{{ item }}</Tag>
-
-          </Space>
-          <Divider></Divider>
+        <Space direction="vertical">
           <Space.Compact>
-            <Select :options="subscribs" v-model:value="client.currentChannel"
-              :fieldNames="{ label: 'title', value: 'value', children: 'children' }"></Select>
-            <Input placeholder="请输入消息" v-model:value="client.say"></Input>
-            <Button type="primary" @click="() => send(client.say, index)">发送</Button>
+
+            <Input style="width: 240px;" v-model:value="serverUrl" :placeholder="`${url}`" />
+            <Button @click="startServer" type="primary" v-show="!serverStatus">启动服务</Button>
+            <Button type="primary" v-show="serverStatus">运行中</Button>
           </Space.Compact>
 
-          <Divider></Divider>
-          <Button danger @click="clear(index)">清空消息</Button>
-          <List :data-source="client.msg">
-            <template #renderItem="{ item }">
-              <List.Item>
 
-                {{ item }}
+          <Space.Compact>
+            <Input placeholder="请输入channel名称" v-model:value="serverChannelName" />
+            <Button @click="() => serverSubscriptChannel()" :disabled="!serverStatus"> 订阅频道</Button>
 
+          </Space.Compact>
+
+          <List item-layout="horizontal" :data-source="subscribs">
+            <template #renderItem="{ index, item }">
+              <List.Item :style="{
+                background: item.status ? '#00b96ba0' : ''
+              }">
+                <template #actions>
+                  <Button v-show="item.status" danger @click="() => serverUnsubscriptChannel(index)">
+                    取消订阅
+                  </Button>
+                  <template v-if="!item.status">
+                    <Button danger @click="() => delServerChannel(index)">
+                      删除
+                    </Button>
+                    <Button type="primary" @click="() => serverSubscriptChannel(index, item.value)">
+                      订阅
+                    </Button>
+                  </template>
+                </template>
+                <template #default>
+
+                  {{ item.title }}
+                </template>
               </List.Item>
             </template>
           </List>
 
-        </Card>
-      </template>
-      <Button @click="addClient" block type="dashed"> 新增用户</Button>
 
 
-    </Card>
-    </Col>
+          <Space.Compact>
 
-  </Row>
+            <Select style="width: 140px" placeholder="请选择channel" :options="subscribs"
+              v-model:value="serverChooseChannel"></Select>
+
+            <Input placeholder="群发消息" v-model:value="serverSay"></Input>
+            <Button @click="() => serverSend()" :disabled="!canAllSend">发送</Button>
+          </Space.Compact>
+
+
+        </Space>
+
+
+
+
+      </Card>
+      </Col>
+
+      <Col span="8">
+      <Card title="服务器接收的消息" hoverable>
+
+        <Button @click="clearServer" danger>清空消息</Button>
+
+        <List :data-source="serverMsg">
+
+          <template #renderItem="{ item }">
+            <List.Item>
+
+              {{ item }}
+
+            </List.Item>
+          </template>
+        </List>
+
+      </Card>
+      </Col>
+
+      <Col span="8">
+      <Card title="所有客户端">
+
+        <Space direction="vertical">
+
+          <template v-for="(client, index) in clients">
+
+
+            <Card :title="`用户${index}`" hoverable>
+
+              <Space direction="vertical">
+
+                <Space.Compact>
+                  <Button type="primary" v-show="!client.status" @click="() => connect(index)">连接stomp服务器</Button>
+                  <Button v-show="client.status" type="primary" @click="() => unconnect(index)">已经连接</Button>
+                  <Select style="width: 140px;" placeholder="请选择channel" v-model:value="client.channelName"
+                    :fieldNames="{ label: 'title', value: 'value', children: 'children' }" :options="subscribs"></Select>
+
+                  <Button @click="() => subscribe(client.channelName, index)">订阅</Button>
+                </Space.Compact>
+
+                <Space>
+                  已经订阅的频道:
+                  <Tag v-for="item in client.channels" @close="() => unsubscribe(item, index)" closable :key="item"
+                    color="blue">{{ item }}</Tag>
+
+                </Space>
+
+                <Space.Compact>
+                  <Select style="width: 180px;" :options="subscribs" v-model:value="client.currentChannel"
+                    :fieldNames="{ label: 'title', value: 'value', children: 'children' }"></Select>
+                  <Input placeholder="请输入消息" v-model:value="client.say"></Input>
+                  <Button type="primary" @click="() => send(client.say, index)">发送</Button>
+                </Space.Compact>
+
+
+                <Button danger @click="clear(index)">清空消息</Button>
+                <List :data-source="client.msg">
+                  <template #renderItem="{ item }">
+                    <List.Item>
+
+                      {{ item }}
+
+                    </List.Item>
+                  </template>
+                </List>
+
+
+              </Space>
+
+
+
+
+
+            </Card>
+          </template>
+          <Button @click="addClient" block type="dashed"> 新增用户</Button>
+        </Space>
+
+
+
+
+      </Card>
+      </Col>
+
+    </Row>
+  </ConfigProvider>
 </template>
 
