@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:24:17
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-28 10:12:41
+ * @LastEditTime: 2023-08-28 23:25:45
  * @FilePath: /test-stomp/src/App.vue
  * @Description: 
 -->
@@ -29,7 +29,7 @@ interface ClientObj {
 }
 
 const url = 'ws://localhost:61614/chat';
-const httpBaseUrl = 'http://localhost:61614';
+const httpBaseUrl = 'http://localhost:61613';
 
 
 const subscribs = ref<{
@@ -270,6 +270,11 @@ const clearServer = async () => {
   serverMsg.value = []
 }
 
+const stopServer = async () => { 
+  await fetch(`${httpBaseUrl}/stop`)
+  serverStatus.value = false
+}
+
 </script>
 
 <template>
@@ -285,6 +290,7 @@ const clearServer = async () => {
             <Input style="width: 240px;" v-model:value="serverUrl" :placeholder="`${url}`" />
             <Button @click="startServer" type="primary" v-show="!serverStatus">启动服务</Button>
             <Button type="primary" v-show="serverStatus">运行中</Button>
+            <Button danger @click="stopServer" v-show="serverStatus">停止服务</Button>
           </Space.Compact>
 
 

@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:33:45
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-27 14:16:25
+ * @LastEditTime: 2023-08-28 23:52:41
  * @FilePath: /test-stomp/src/server.js
  * @Description: 
  */
@@ -24,6 +24,8 @@ const server = http.createServer();
 
 let stompServer = null
 
+let stompHttpServer = null
+
 let wsInstance = null
 
 
@@ -36,24 +38,33 @@ const createWebSocketServer = () => {
 
   const wsServer = new WebSocketServer({ server: baseServer, path: '/server-msg' });
   wsServer.on('connection', function (ws) {
-
     console.log(`websocket 连接成功.`);
     wsInstance = ws
   });
+}
 
+
+const createStompServer = () => {
+  const server = http.createServer();
+  server.listen(61614);
+  stompServer = new StompServer({
+    server: server,
+    debug: console.log,
+    path: '/chat',
+    protocol: 'ws',
+    onclose: function (session) {
+      console.log('onclose', session)
+      wsInstance.send(`onclose`)
+    }
+  });
+  stompHttpServer = server
 
 
 }
 
 createWebSocketServer()
 
-
-const registeMap = {
-
-
-}
-
-
+const registeMap = {}
 
 server.on('request', (req, response) => {
 
@@ -68,19 +79,32 @@ server.on('request', (req, response) => {
 
 
   if (url.startsWith('/start')) {
-    if (!stompServer) {
 
-      stompServer = new StompServer({
-        server: server, debug: console.log,
-        path: '/chat',
-        protocol: 'ws',
-      });
+    if (!stompServer) {
+      createStompServer()
 
     } else {
       console.log('stomp服务  已经启动过了')
       result.code = 1
       result.msg = 'stompServer is already start'
     }
+  } else if (url.startsWith('/stop')) {
+    if (stompHttpServer) {
+
+      stompHttpServer.close(() => {
+        stompHttpServer = null
+        stompServer = null
+        wsInstance.send(`stomp服务  已经停止`)
+        process.exit(0)
+      }).on('error', (err) => {
+        console.log('关闭stomp服务失败', err)
+        result.code = 1
+        result.msg = '关闭stomp服务失败'
+      });
+    }
+
+
+
   } else if (url.startsWith('/sub')) {//
 
     const channelName = query.channelName
@@ -116,7 +140,7 @@ server.on('request', (req, response) => {
   response.end()
 })
 
-server.listen(61614);
+server.listen(61613);
 
 
 
