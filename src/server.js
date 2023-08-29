@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:33:45
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-29 23:17:11
+ * @LastEditTime: 2023-08-29 23:27:23
  * @FilePath: /test-stomp/src/server.js
  * @Description: 
  */
@@ -126,6 +126,8 @@ server.on('request', (req, response) => {
       // stompHttpServer.disconnect();
       stompHttpServer.close(() => {
         wsInstance.send(`服务器 已关闭`)
+        stompServer = null
+        stompHttpServer = null
       });
 
     }

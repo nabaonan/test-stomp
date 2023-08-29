@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:24:17
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-29 23:17:01
+ * @LastEditTime: 2023-08-29 23:30:29
  * @FilePath: /test-stomp/src/App.vue
  * @Description: 
 -->
@@ -64,6 +64,7 @@ const connect = (index: number) => {
     onWebSocketClose: () => {
       clients.value[index].msg.push(`断开了  ${url}`);
       clients.value[index].status = false
+      clients.value[index].client = undefined
     },
   });
 
