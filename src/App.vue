@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:24:17
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-28 23:25:45
+ * @LastEditTime: 2023-08-29 23:17:01
  * @FilePath: /test-stomp/src/App.vue
  * @Description: 
 -->
@@ -56,39 +56,24 @@ const connect = (index: number) => {
     },
     onConnect: () => {
 
-      clients.value[index].msg.push(`Connected to ${url}`);
-      clients.value[index].client = client
+      clients.value[index].msg.push(`已连接  ${url}`);
+     
       clients.value[index].status = true
 
     },
     onWebSocketClose: () => {
-      clients.value[index].msg.push(`Disconnected to ${url}`);
+      clients.value[index].msg.push(`断开了  ${url}`);
       clients.value[index].status = false
     },
   });
 
+  clients.value[index].client = client
   client.activate();
 
 
 }
 
 
-// let client2:any = null
-// const connect2 = () => { 
-//  client2 = Stomp.client(url);
-
-
-// }
-
-// const subscribe2 = (channelName: string,index:number) => {
-
-//   client2.connect({}, function () {
-//     client2.subscribe(channelName, function (message:any) {
-//       console.log(message.body);
-//       clients.value[index].msg.push(`接收到的消息: ${message.body}`)
-//     });
-//   });
-// }
 
 const unconnect = (index: number) => {
 
@@ -108,9 +93,11 @@ const subscribe = (channelName: string, index: number) => {
       message.warn(channelName + '已经订阅过了')
       return
     }
-    client.subscribe = client.client?.subscribe(channelName, (message) => {
+    const subscribe = client.client?.subscribe(channelName, (message) => {
       client.msg.push(`接收到的消息: ${message.body}`)
     });
+
+    client.subscribe = subscribe
     client.channels.push(channelName)
     client.channelName = ''
   }
@@ -130,6 +117,9 @@ const send = (msg: string, index: number) => {
 
   const client = clients.value[index]
   if (client && msg) {
+
+    client.msg.push('客户端发送 内容= ' + msg + '，  频道 = ' + client.currentChannel)
+
     client.client?.publish({ destination: client.currentChannel, body: msg });
 
   }
@@ -247,7 +237,7 @@ const initServerSocket = () => {
 
   socket.onopen = function () {
     console.log("连接建立成功...");
-    serverMsg.value.push('连接建立成功')
+    serverMsg.value.push('服务日志连接成功')
   };
 
   socket.onmessage = function (event) {
@@ -260,8 +250,10 @@ const initServerSocket = () => {
 
 
     console.log("连接关闭...");
-    serverMsg.value.push('连接关闭')
+    serverMsg.value.push('日志连接断开')
   };
+
+
 
 }
 
@@ -270,7 +262,7 @@ const clearServer = async () => {
   serverMsg.value = []
 }
 
-const stopServer = async () => { 
+const stopServer = async () => {
   await fetch(`${httpBaseUrl}/stop`)
   serverStatus.value = false
 }
@@ -378,8 +370,9 @@ const stopServer = async () => {
               <Space direction="vertical">
 
                 <Space.Compact>
-                  <Button type="primary" v-show="!client.status" @click="() => connect(index)">连接stomp服务器</Button>
-                  <Button v-show="client.status" type="primary" @click="() => unconnect(index)">已经连接</Button>
+                  <Button type="primary" v-show="!client.status" @click="() => connect(index)">连接服务器</Button>
+                  <Button v-show="client.status"   danger @click="() => unconnect(index)">停止连接</Button>
+                  <!-- <Button v-show="client.status" type="primary" @click="() => unconnect(index)">断开</Button> -->
                   <Select style="width: 140px;" placeholder="请选择channel" v-model:value="client.channelName"
                     :fieldNames="{ label: 'title', value: 'value', children: 'children' }" :options="subscribs"></Select>
 

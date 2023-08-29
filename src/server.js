@@ -2,7 +2,7 @@
  * @Author: nabaonan
  * @Date: 2023-08-25 17:33:45
  * @LastEditors: nabaonan
- * @LastEditTime: 2023-08-28 23:52:41
+ * @LastEditTime: 2023-08-29 23:17:11
  * @FilePath: /test-stomp/src/server.js
  * @Description: 
  */
@@ -13,11 +13,6 @@ import { WebSocketServer } from 'ws'
 
 import StompServer from 'stomp-broker-js';
 
-
-// const requestListener = (req, res) => {
-//   res.writeHead(200);
-//   res.end('raw node server!~');
-// };
 
 
 const server = http.createServer();
@@ -43,26 +38,61 @@ const createWebSocketServer = () => {
   });
 }
 
+createWebSocketServer()
+
 
 const createStompServer = () => {
-  const server = http.createServer();
-  server.listen(61614);
+  stompHttpServer = http.createServer();
+
+
   stompServer = new StompServer({
-    server: server,
+    server: stompHttpServer,
     debug: console.log,
     path: '/chat',
     protocol: 'ws',
-    onclose: function (session) {
-      console.log('onclose', session)
-      wsInstance.send(`onclose`)
-    }
+
   });
-  stompHttpServer = server
+
+  const getTarget = (id) => {
+    let target = ''
+    if (id.startsWith('self_')) {
+      target = '服务器'
+    } else {
+      target = '客户端'
+    }
+    return target
+  }
+
+  stompServer.on('connected', (sessionId, headers) => {
+    // wsInstance.send(`已连接   `)
+  })
+  stompServer.on('disconnected', (sessionId, headers) => {
+    // wsInstance.send(`已断开 `)
+  })
+  stompServer.on('error', (error) => {
+    wsInstance.send(` 报错了  error=${error}`)
+  })
+  stompServer.on('subscribe', (sub) => {
+    // wsInstance.send(`${getTarget(sub.id)}订阅 id=${sub.id}  频道=${sub.topic}   `)
+  })
+  stompServer.on('unsubscribe', (sub) => {
+
+    // wsInstance.send(`${getTarget(sub.id)}取消订阅  id=${sub.id}  频道=${sub.topic} `)
+  })
+  stompServer.on('connecting', (sessionId) => {
+    // wsInstance.send(`连接中  `)
+  })
+  stompServer.on('send', (frame) => {
+    // wsInstance.send(`发送数据   频道=${frame.headers.destination}   内容=${frame.body} }`)
+
+  })
+  stompHttpServer.listen(61614);
+
 
 
 }
 
-createWebSocketServer()
+
 
 const registeMap = {}
 
@@ -81,7 +111,9 @@ server.on('request', (req, response) => {
   if (url.startsWith('/start')) {
 
     if (!stompServer) {
+
       createStompServer()
+      // wsInstance.send(`stomp服务开始启动`)
 
     } else {
       console.log('stomp服务  已经启动过了')
@@ -90,17 +122,12 @@ server.on('request', (req, response) => {
     }
   } else if (url.startsWith('/stop')) {
     if (stompHttpServer) {
-
+      wsInstance.send(`关闭服务器 `)
+      // stompHttpServer.disconnect();
       stompHttpServer.close(() => {
-        stompHttpServer = null
-        stompServer = null
-        wsInstance.send(`stomp服务  已经停止`)
-        process.exit(0)
-      }).on('error', (err) => {
-        console.log('关闭stomp服务失败', err)
-        result.code = 1
-        result.msg = '关闭stomp服务失败'
+        wsInstance.send(`服务器 已关闭`)
       });
+
     }
 
 
@@ -108,13 +135,14 @@ server.on('request', (req, response) => {
   } else if (url.startsWith('/sub')) {//
 
     const channelName = query.channelName
+    wsInstance.send(`服务器订阅 频道=  ${channelName}`)
     const id = stompServer.subscribe(channelName, function (msg, headers) {
       var topic = headers.destination;
       console.log('nbn-----------start-------')
       console.log(topic, "->{" + (typeof msg) + "}", msg, headers);
       console.log('nbn-----------end-------')
 
-      wsInstance.send(`服务器接受消息： channelName: ${channelName} ,say:${msg}`)
+      wsInstance.send(`服务器收到消息： 频道=  ${channelName} ,内容:${msg}`)
 
     });
 
@@ -125,13 +153,13 @@ server.on('request', (req, response) => {
     stompServer.unsubscribe(registeMap[channelName])//只能穿id
 
     delete registeMap[channelName]
-    wsInstance.send(`取消订阅   channelName: ${channelName}`)
+    wsInstance.send(`服务器取消订阅   channelName: ${channelName}`)
     result.msg = 'unsub success'
   } else if (url.startsWith('/send')) {//服务器群发
     const channelName = query.channelName
     const msg = query.msg
     stompServer.send(channelName, {}, msg)
-    wsInstance.send(`群发消息   channelName: ${channelName}  msg:${msg}`)
+    wsInstance.send(`服务器发送   频道: ${channelName}  内容:${msg}`)
   }
 
   console.log('返回')
